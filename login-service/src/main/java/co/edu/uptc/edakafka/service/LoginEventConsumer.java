@@ -1,6 +1,6 @@
 package co.edu.uptc.edakafka.service;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import co.edu.uptc.edakafka.model.Login;
@@ -18,13 +18,6 @@ public class LoginEventConsumer {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "login-events", groupId = "login_group")
-    public void consume(ConsumerRecord<String, String> record) {
-        String eventType = record.key();
-        String message = record.value();
-        System.out.println("[LOGIN CONSUMER] EventType=" + eventType + ", message=" + message);
-    }
-
     @KafkaListener(topics = "create-login-cmd", groupId = "login_group")
     public void handleCreateLoginCmd(String message) {
         System.out.println("[LOGIN CONSUMER] recv create-login-cmd: " + message);
@@ -37,7 +30,7 @@ public class LoginEventConsumer {
         } catch (Exception e) {
             System.err.println("[LOGIN CONSUMER] SAGA FAILED: " + e.getMessage());
             if (login == null) {
-                login = new Login(); // Empty login to denote failure if parsing failed
+                login = new Login();
             }
             loginEventProducer.sendLoginFailedEvent(login, e.getMessage());
         }

@@ -1,6 +1,5 @@
 package co.edu.uptc.edakafka.service;
-import java.util.List;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -16,18 +15,6 @@ public class CustomerEventConsumer {
     @Autowired
     private CustomerEventProducer customerEventProducer;
 
-    @KafkaListener(topics = "customer-events", groupId = "customer_group")
-    public void handleCustomerEvent(ConsumerRecord<String, String> record) {
-        // ...existing code... we don't care too much, maybe keep it to avoid compile issues, but we better keep it basic
-        String eventType = record.key();
-        String payload = record.value();
-        if ("CUSTOMER_CREATED".equals(eventType)) {
-            Customer customer = JsonUtils.fromJson(payload, Customer.class);
-            customerService.save(customer);
-        }
-    }
-
-    // Saga Endpoints
     @KafkaListener(topics = "create-customer-cmd", groupId = "customer_group")
     public void handleCreateCustomerCmd(String message) {
         System.out.println("[CUSTOMER CONSUMER] recv create-customer-cmd: " + message);
@@ -36,6 +23,8 @@ public class CustomerEventConsumer {
         if (saved) {
             System.out.println("[CUSTOMER CONSUMER] Saved! Sending customer-created-event...");
             customerEventProducer.sendCustomerCreatedEvent(customer);
+        } else {
+            System.err.println("[CUSTOMER CONSUMER] Failed to save customer, no saga event sent.");
         }
     }
 
@@ -43,9 +32,12 @@ public class CustomerEventConsumer {
     public void handleUndoCustomerCmd(String message) {
         System.out.println("[CUSTOMER CONSUMER] recv undo-customer-cmd: " + message);
         try {
-            Customer customer = JsonUtils.fromJson(message, Customer.class);
-            customerService.delete(customer);
-            System.out.println("[CUSTOMER CONSUMER] Undo successful!");
+            boolean deleted = customerService.deleteById(message);
+            if (deleted) {
+                System.out.println("[CUSTOMER CONSUMER] Undo successful for customerId=" + message);
+            } else {
+                System.err.println("[CUSTOMER CONSUMER] Undo failed for customerId=" + message);
+            }
         } catch (Exception e) {
             System.err.println("Failed undo " + e.getMessage());
         }

@@ -38,6 +38,16 @@ public class CustomerService {
         }
     }
 
+    public boolean deleteById(String document) {
+        try {
+            customerRepository.deleteById(document);
+            return true;
+        } catch (Exception e) {
+            System.out.println("[SERVICE] Error eliminando por id: " + e.getMessage());
+            return false;
+        }
+    }
+
     public Customer findById(String document) {
         Optional<Customer> opt = customerRepository.findById(document);
         return opt.orElse(null);

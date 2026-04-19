@@ -33,29 +33,5 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-  edakafka:
-    build:
-      context: ./edakafka
-      dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-    depends_on:
-      - mysql
-      - kafka
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/orders?serverTimezone=GMT-5
-      - SPRING_DATASOURCE_USERNAME=orders
-      - SPRING_DATASOURCE_PASSWORD=uptc2026
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-
-  gateway:
-    build:
-      context: ./gateway
-      dockerfile: Dockerfile
-    ports:
-      - 8081:8081
-    depends_on:
-      - edakafka
-
 volumes:
   mysql_data:
